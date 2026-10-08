@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(dirname "$0")"
 . .venv/bin/activate
-python src/delve_agent.py watch
+python src/delve_agent.py watch --draft-only

@@ -300,19 +300,22 @@ def maybe_spontaneous(bot,posts,seen,own,own_did,state,draft_only=False):
             ctx=thread_context(uri,own) if _parent_uri(target) else None
             ans=bot.reply(text,context=ctx)
             print(f'\nSPONTANEOUS RANDOM REPLY\nAuthor: {author}\nText: {text}\nURI: {uri}\n\nDRAFT:\n{ans}')
-            performed=reply(uri,ans,mode_override=mode)
+            performed=False if draft_only else reply(uri,ans,mode_override=mode)
             # Mark the target even in draft mode so a dry run does not hammer the same post.
-            seen.add(uri);save_seen(seen)
+            seen.add(uri)
+            if not draft_only:save_seen(seen)
             if performed or draft_only:
-                state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1;save_spontaneous_state(state)
+                state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1
+                if not draft_only:save_spontaneous_state(state)
             return performed or draft_only
         # No eligible random target? Fall through to a root post rather than doing nothing.
 
     ans=bot.reply(_standalone_prompt(),max_new_tokens=_env_int('DOUGBOT_SPONTANEOUS_POST_MAX_TOKENS',70,8))
     print(f'\nSPONTANEOUS STANDALONE POST\n\nDRAFT:\n{ans}')
-    performed=post(ans,mode_override=mode)
+    performed=False if draft_only else post(ans,mode_override=mode)
     if performed or draft_only:
-        state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1;save_spontaneous_state(state)
+        state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1
+        if not draft_only:save_spontaneous_state(state)
     return performed or draft_only
 
 
@@ -339,7 +342,9 @@ def watch(limit=40,max_drafts=0,draft_only=False):
             ans=bot.reply(text,context=ctx)
             print('\nDRAFT:\n',ans)
             if not draft_only:reply(uri,ans)
-            seen.add(uri);save_seen(seen);actions+=1;did_action=True
+            seen.add(uri)
+            if not draft_only:save_seen(seen)
+            actions+=1;did_action=True
             if max_drafts>0 and actions>=max_drafts:
                 print('session action cap reached; exiting');return
             time.sleep(2)

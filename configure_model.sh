@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+cd "$(dirname "$0")"
 MODEL_PATH="${1:?usage: ./configure_model.sh /path/to/qwenity}"
 test -f "$MODEL_PATH/config.json" || { echo "config.json not found" >&2; exit 1; }
 test -f "$MODEL_PATH/model.safetensors" || { echo "model.safetensors not found" >&2; exit 1; }
