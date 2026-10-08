@@ -11,7 +11,7 @@ Dougbot distributes a separate fan-made LoRA adapter, **not** the Qwen base weig
 
 Upstream project: https://tangled.org/void.comind.network/interacting-with-delve-town
 
-The client is maintained independently of Dougbot. **Its redistribution license has not been verified.** Accordingly it is no longer included in the current project tree. Optional Delve setup checks out the upstream client on the user's own machine instead of copying it into this repository. Do not claim the client is licensed under the license chosen for Dougbot, or re-bundle it without verifying permission.
+The client is maintained independently of Dougbot. **Its redistribution license has not been verified.** Accordingly it is no longer included in the current project tree. The optional `src/setup_delve_client.py` script checks out the upstream client on the user's own machine instead of copying it into this repository. Normal local-chat setup does not download it. Do not claim the client is licensed under the license chosen for Dougbot, or re-bundle it without verifying permission.
 
 ## Data and fan project
 

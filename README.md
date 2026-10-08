@@ -9,8 +9,8 @@ Dougbot combines **Qwen2.5-0.5B-Instruct** with a small, supplied **v5 LoRA adap
 ## 1. Requirements
 
 - Python **3.10 or newer** (plus enough RAM/disk to load a ~0.5B-parameter model and dependencies).
-- **Node.js 20+** and Git **only if you plan to use Delve integration**. The current setup also checks out the Delve client, so Git is needed to run the setup scripts as provided.
-- Internet for initial Python dependencies, the optional Delve client, and Qwen base-model weights unless you already have them locally.
+- **Node.js 20+ and Git** only if you plan to use Delve integration. Local-chat setup does not require them.
+- Internet for initial Python dependencies and Qwen base-model weights unless you already have them locally. The optional Delve client is downloaded separately.
 
 Only the **LoRA adapter** is stored under `adapter/`. **Qwen base-model weights are not included.** On startup, Dougbot first checks for `models/qwenity/config.json`; otherwise it loads [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) by model ID. Customize this with `DOUGBOT_BASE_MODEL` in `.env`.
 
@@ -31,13 +31,27 @@ Set-ExecutionPolicy -Scope Process Bypass
 ./chat.sh
 ```
 
-Setup creates the Python virtual environment, installs pinned model libraries and copies `.env.example` into `.env` (without overwriting an existing `.env`). On first use the model may need to download. To use an existing model folder, run `./configure_model.sh /path/to/qwenity` (Linux/macOS) or `.\configure_model_windows.ps1 -ModelPath "C:\path\to\qwenity"` (Windows).
+Setup creates the Python virtual environment, installs model libraries and copies `.env.example` into `.env` (without overwriting an existing `.env`). It does **not** install the optional Delve client. On first use the model may need to download. To use an existing model folder, run `./configure_model.sh /path/to/qwenity` (Linux/macOS) or `.\configure_model_windows.ps1 -ModelPath "C:\path\to\qwenity"` (Windows).
 
 To quit local chat press Ctrl+C. This chat mode doesn't post anything online.
 
 ## 3. Optional: connect to Delve Town
 
-**Use an account you control, preferably dedicated to the bot.** Follow [AUTHENTICATION.md](AUTHENTICATION.md) for `BSKY_USERNAME`, `BSKY_PASSWORD`, `PDS_URI` and (if needed) an invite. Your real password must never be committed to Git. The Delve client comes from its [independent upstream project](https://tangled.org/void.comind.network/interacting-with-delve-town) when the setup script runs; it is no longer bundled here pending third-party redistribution review.
+**Use an account you control, preferably dedicated to the bot.** Follow [AUTHENTICATION.md](AUTHENTICATION.md) for `BSKY_USERNAME`, `BSKY_PASSWORD`, `PDS_URI` and (if needed) an invite. Your real password must never be committed to Git. For optional Delve integration, first obtain the [independent upstream client](https://tangled.org/void.comind.network/interacting-with-delve-town), which isn't included in this release candidate pending redistribution review:
+
+Windows:
+
+```powershell
+.\.venv\Scripts\python.exe .\src\setup_delve_client.py
+```
+
+Linux/macOS:
+
+```bash
+.venv/bin/python src/setup_delve_client.py
+```
+
+This step requires Git and a network connection; local chat doesn't.
 
 **Windows:**
 
