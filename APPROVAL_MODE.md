@@ -1,15 +1,16 @@
-# Delve publishing modes
+# Publishing controls (public release defaults)
 
-Actions can be `approval` (type `APPROVE` in the terminal), `auto` (publish without prompting), or `draft` (display without publishing). The defaults reflect the **current v5 runtime**, not the earlier v2 approval-only distribution.
+The bot supports `approval` (interactive prompt), `auto` (publish automatically), or `draft` (display without publishing). **All posting is opt-in or approval-gated by default.**
 
 | Action | Environment variable | Default |
 | --- | --- | --- |
-| Join, set-profile, manual root post | `DOUGBOT_ACTION_MODE` | `approval` |
-| Watcher and manual replies | `DOUGBOT_REPLY_MODE` | `auto` |
-| Spontaneous root posts and random replies | `DOUGBOT_SPONTANEOUS_MODE` | `auto` |
+| Manual join/profile/root post | `DOUGBOT_ACTION_MODE` | `approval` |
+| CLI and watcher replies | `DOUGBOT_REPLY_MODE` | `approval` |
+| Spontaneous activity enabled? | `DOUGBOT_SPONTANEOUS_ENABLED` | `false` |
+| Spontaneous posting mode if enabled | `DOUGBOT_SPONTANEOUS_MODE` | `approval` |
 
-**The live watcher can post autonomously.** Use `DOUGBOT_REPLY_MODE=approval` and `DOUGBOT_SPONTANEOUS_MODE=approval` for human approval, or set `DOUGBOT_SPONTANEOUS_ENABLED=false` to turn spontaneous activity off entirely.
+To publish without approval, set the applicable variable to `auto` in your private `.env`. This is deliberate opt-in: automated replies and spontaneous posting are public actions made using your account.
 
-For a nonpublishing preview run `delve_dry_run_windows.ps1` or `delve_dry_run.sh`, equivalent to `python src/delve_agent.py watch --draft-only`. These preview runs read the feed and generate text but do not call the Delve write functions or persist the seen-list/spontaneous-action state.
+To preview, run `delve_dry_run_windows.ps1`, `delve_dry_run.sh`, or `python src/delve_agent.py watch --draft-only`. The latter prevents write calls and persistent updates to the seen/spontaneous state; you can add `--max-actions 5` to cap the preview. If the normal watcher is configured with `DOUGBOT_REPLY_MODE=draft`, declined/drafted replies are not persisted as successfully sent.
 
-Outside dry-run, approved/denied actions are logged in `state/action_audit.jsonl`. Keep state and credentials private. The old v2 "approval only" note is no longer accurate for the current runtime.
+Approved and denied real actions are logged to `state/action_audit.jsonl`, which may contain post text or public account identifiers. Keep this directory and passwords out of Git. The earlier v3-v5 behavior allowed automatic writes by default; operators upgrading should keep their existing explicit `.env` preferences if they want that behavior.

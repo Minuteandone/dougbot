@@ -67,6 +67,29 @@ class RuntimeSmokeTests(unittest.TestCase):
             with redirect_stdout(io.StringIO()):
                 self.assertTrue(agent.maybe_spontaneous(FakeBot(), [post], set(), "dougbot.delve.town", "did:plc:bot", state, draft_only=True))
 
+    def test_public_defaults_require_approval(self):
+        agent = load_script("delve_agent.py")
+        with mock.patch.dict(os.environ, {}, clear=True), \
+             mock.patch.object(agent, "_audit"), \
+             mock.patch("builtins.input", return_value="NO"):
+            with redirect_stdout(io.StringIO()):
+                self.assertFalse(agent.action_allowed("create Delve reply", "preview"))
+                self.assertFalse(agent.action_allowed("create Delve post", "preview"))
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(agent._spontaneous_due({"last_action": 0}))
+
+    def test_draft_replies_are_not_saved_as_published(self):
+        agent = load_script("delve_agent.py")
+        post = {"uri": "at://did:plc:other/town.delve.feed.post/test123", "author": "other.delve.town", "text": "@dougbot.delve.town hi"}
+        with mock.patch.dict(os.environ, {"DOUGBOT_REPLY_MODE": "draft"}, clear=True), \
+             mock.patch.object(agent, "node", return_value=json.dumps({"feed": [post]})), \
+             mock.patch.object(agent, "own_identity", return_value=("dougbot.delve.town", "did:plc:bot")), \
+             mock.patch.object(agent, "load_seen", return_value=set()), \
+             mock.patch.object(agent, "save_seen", side_effect=AssertionError("saved draft")), \
+             mock.patch.object(agent, "_audit"):
+            with redirect_stdout(io.StringIO()):
+                agent.watch(limit=1, max_drafts=1, draft_only=False)
+
     def test_chat_uses_existing_adapter_attribute(self):
         chat = load_script("chat.py")
         with mock.patch("builtins.input", side_effect=["hello", KeyboardInterrupt]), redirect_stdout(io.StringIO()) as output:

@@ -1,78 +1,86 @@
 # Dougbot 🤖🌶️
 
-Dougbot is a fan-made, DougDoug-inspired local chatbot and [Delve Town](https://delve.town/) agent. **It is not DougDoug and is not affiliated with him.** This repository currently combines a **v5 LoRA adapter** with a Delve watcher that can reply to threads and optionally post spontaneously.
+**A local comedy chatbot and optional Delve Town bot, trained as a DougDoug-inspired fan project.** It is not DougDoug, not affiliated with DougDoug, and not a statement of his views.
 
-## Project layout
+Dougbot combines **Qwen2.5-0.5B-Instruct** with a small, supplied **v5 LoRA adapter**. You can chat with the model locally without a Delve account; connecting it to [Delve Town](https://delve.town) is optional.
 
-| Location | Purpose |
-| --- | --- |
-| `src/dougbot_model.py`, `src/chat.py` | Load the model and run local chat |
-| `src/delve_agent.py` | Delve commands, mentions, thread replies and spontaneous activity |
-| `adapter/` | Current v5 LoRA weights and metadata; **not** the Qwen base model |
-| `data/`, `src/train_*.py` | Training examples and experimental scripts |
-| `vendor/interacting-with-delve-town/` | Bundled Delve ATProto client |
-| `docs/history/` | Archived notes and reports for previous Dougbot versions |
+> **Public release status:** This is a release candidate. The maintainer must select a project license and finish the third-party/data rights review before calling it a redistributable open-source release. See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
 
-**The Qwen base weights are not bundled in this Git repository.** By default the runtime uses `models/qwenity/` if it contains a model, and otherwise loads `Qwen/Qwen2.5-0.5B-Instruct` through Hugging Face (which may download on first use). Use `DOUGBOT_BASE_MODEL` to override. For offline use, supply a compatible local model.
+## 1. Requirements
 
-## Windows setup
+- Python **3.10 or newer** (plus enough RAM/disk to load a ~0.5B-parameter model and dependencies).
+- **Node.js 20+** and Git **only if you plan to use Delve integration**. The current setup also checks out the Delve client, so Git is needed to run the setup scripts as provided.
+- Internet for initial Python dependencies, the optional Delve client, and Qwen base-model weights unless you already have them locally.
 
-Install Python, Node.js and Git, then open PowerShell in the repository folder.
+Only the **LoRA adapter** is stored under `adapter/`. **Qwen base-model weights are not included.** On startup, Dougbot first checks for `models/qwenity/config.json`; otherwise it loads [Qwen2.5-0.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct) by model ID. Customize this with `DOUGBOT_BASE_MODEL` in `.env`.
+
+## 2. Install and chat
+
+**Windows** — open PowerShell in the repository folder:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\setup_windows.ps1
-# Edit .env as needed
 .\chat_windows.ps1
 ```
 
-Setup creates `.venv`, installs dependencies and copies the new `.env.example` to `.env`. The Delve client is already present in `vendor/`.
-
-For a base model stored outside this repository:
-
-```powershell
-.\configure_model_windows.ps1 -ModelPath "C:\path\to\qwenity"
-```
-
-For dependency repair on Windows: `./repair_dependencies_windows.ps1` (this expects a local model at `models/qwenity/` for its tokenizer check).
-
-## Linux/macOS setup
+**Linux/macOS:**
 
 ```bash
 ./setup.sh
-# Edit .env
 ./chat.sh
 ```
 
-Use `./configure_model.sh /path/to/qwenity` for a custom local model. The included training launchers expect the local base weights at `models/qwenity/`; training is optional.
+Setup creates the Python virtual environment, installs pinned model libraries and copies `.env.example` into `.env` (without overwriting an existing `.env`). On first use the model may need to download. To use an existing model folder, run `./configure_model.sh /path/to/qwenity` (Linux/macOS) or `.\configure_model_windows.ps1 -ModelPath "C:\path\to\qwenity"` (Windows).
 
-## Using Delve
+To quit local chat press Ctrl+C. This chat mode doesn't post anything online.
 
-Read [AUTHENTICATION.md](AUTHENTICATION.md) for home-PDS setup and secure credentials. Never commit passwords or invite codes.
+## 3. Optional: connect to Delve Town
+
+**Use an account you control, preferably dedicated to the bot.** Follow [AUTHENTICATION.md](AUTHENTICATION.md) for `BSKY_USERNAME`, `BSKY_PASSWORD`, `PDS_URI` and (if needed) an invite. Your real password must never be committed to Git. The Delve client comes from its [independent upstream project](https://tangled.org/void.comind.network/interacting-with-delve-town) when the setup script runs; it is no longer bundled here pending third-party redistribution review.
+
+**Windows:**
 
 ```powershell
-.\auth_session_windows.ps1  # optional password in this PowerShell session
+.\auth_session_windows.ps1
 .\delve_status_windows.ps1
-.\delve_dry_run_windows.ps1  # preview: does not publish
-.\delve_watch_windows.ps1    # LIVE: can publish automatically
+.\delve_dry_run_windows.ps1  # safe preview; no posting
+.\delve_watch_windows.ps1    # actual watcher; prompts before posts by default
 ```
 
-On Linux/macOS: `./delve_dry_run.sh` or `./delve_watch.sh`. The watcher responds to mentions and replies to Dougbot's posts, skips its own records and can generate spontaneous posts/random replies.
+**Linux/macOS:** `./delve_dry_run.sh` previews; `./delve_watch.sh` starts the watcher. The account's handle is detected from Delve status or `BSKY_USERNAME`; the trigger defaults to the account's full `@handle`. Customize `DOUGBOT_TRIGGER` in `.env` if people mention the bot differently.
 
-**The watcher is not approval-only.** Replies and spontaneous activity default to automatic publishing. Before starting the live watcher, configure the modes in `.env`: `DOUGBOT_REPLY_MODE=approval` and `DOUGBOT_SPONTANEOUS_MODE=approval` for prompted approval, or `DOUGBOT_SPONTANEOUS_ENABLED=false` to stop unsolicited activity. The default for manual join, profile edit and root-post commands is approval. See [APPROVAL_MODE.md](APPROVAL_MODE.md) and [SPONTANEOUS_SETTINGS.env](SPONTANEOUS_SETTINGS.env).
+### Public-safe behavior by default
 
-`python src/delve_agent.py watch --draft-only` previews generated replies without publishing or persisting seen/spontaneous state. Both dry-run launchers use this mode. `watch --max-actions N` sets an optional session cap; default is unlimited.
+- **All manual join/profile/post operations and watcher replies require typing `APPROVE`** in the console before publishing.
+- **Spontaneous posts and random replies are disabled** until you choose to enable them.
+- Both dry-run launchers use `watch --draft-only`, which never calls posting functions or persists seen/spontaneous state.
+- Nothing posts to Delve during local chat.
 
-## Privacy, upgrades and development
+For unattended mention replies, explicitly set `DOUGBOT_REPLY_MODE=auto`. For unsolicited posts/replies, set `DOUGBOT_SPONTANEOUS_ENABLED=true` and separately choose `DOUGBOT_SPONTANEOUS_MODE=auto` (or `approval` for prompts). Only enable these modes on an account you intend to operate publicly. Read [APPROVAL_MODE.md](APPROVAL_MODE.md) and [SPONTANEOUS_SETTINGS.env](SPONTANEOUS_SETTINGS.env) first.
 
-Credentials live in `.env`; mutable watcher state lives in `state/`. Both are excluded from new Git commits via `.gitignore`.
+The watcher handles mentions and direct replies to its own posts, skips its own records, and keeps conversation context when available. `python src/delve_agent.py watch --max-actions 10` limits one session to 10 processed actions for testing; otherwise it runs until stopped. **Declined/drafted actions are not saved as successfully posted replies.**
 
-**Before updating an existing checkout, back up its `state/` folder.** This cleanup removes old accidentally tracked state snapshots, and Git may remove those files when you pull. They are still used/generated locally. Removing tracked state from a new commit does **not** remove it from old Git history.
+## Project organization
 
-Run dependency-free smoke tests with:
+| Folder/file | Role |
+| --- | --- |
+| `src/chat.py` and `src/dougbot_model.py` | Local model inference and chat |
+| `src/delve_agent.py` | Delve watcher and posting controls |
+| `src/setup_delve_client.py` | Downloads independent Delve client for opt-in use |
+| `adapter/` | Trained v5 adapter weights and model card |
+| `data/` and `src/train_*.py` | Training data, builders and experiments |
+| `docs/history/` | Archived version notes (not current instructions) |
+| `tests/` | Dependency-free smoke tests |
+
+## Testing and privacy
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-These tests mock Delve and model access; they cannot certify live posting or generation quality. Earlier v2–v4 overlays and training notes are preserved at `docs/history/` rather than being treated as installation instructions. Current adapter details are in [adapter/README.md](adapter/README.md).
+These smoke tests use mocks: they do **not** guarantee inference quality or verify the live Delve service. Before publishing a release, follow [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md), including Windows, Linux, offline-model and Delve preview tests.
+
+`.env` and `state/` are excluded from future commits. **If updating an existing clone, back up its `state/` directory before pulling**: Git may remove previously tracked state files. Losing `replied.json` may cause old mentions to be processed again. Previously committed state remains accessible in old Git history; removing current files does not erase that history.
+
+See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [data/SOURCES.md](data/SOURCES.md) for provenance. This is a fan-made experiment, not an official DougDoug product.
