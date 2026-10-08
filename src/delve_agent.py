@@ -50,7 +50,7 @@ def action_allowed(action,details,mode_override=None):
     if mode_override is not None:
         mode=mode_override.strip().lower()
     else:
-        mode=(os.getenv('DOUGBOT_REPLY_MODE','auto') if action=='create Delve reply' else os.getenv('DOUGBOT_ACTION_MODE','approval')).strip().lower()
+        mode=(os.getenv('DOUGBOT_REPLY_MODE','approval') if action=='create Delve reply' else os.getenv('DOUGBOT_ACTION_MODE','approval')).strip().lower()
     if mode=='auto':
         print(f'\nAUTO ACTION: {action}\n{details}\n')
         _audit(action,details,True,mode); return True
@@ -194,9 +194,9 @@ def parse_feed(raw):
 def own_identity():
     try:
         data=json.loads(node('status'));iden=data.get('identity',{})
-        return str(iden.get('handle') or os.getenv('DOUGBOT_HANDLE','dougbot.delve.town')).lower(),str(iden.get('did') or '')
+        return str(iden.get('handle') or os.getenv('DOUGBOT_HANDLE') or os.getenv('BSKY_USERNAME') or 'dougbot.delve.town').lower(),str(iden.get('did') or '')
     except Exception:
-        return os.getenv('DOUGBOT_HANDLE','dougbot.delve.town').lower(),''
+        return (os.getenv('DOUGBOT_HANDLE') or os.getenv('BSKY_USERNAME') or 'dougbot.delve.town').lower(),''
 
 
 def thread_context(uri,own_handle,max_posts=6):
@@ -280,7 +280,7 @@ def _standalone_prompt():
 
 
 def _spontaneous_due(state):
-    if not _env_bool('DOUGBOT_SPONTANEOUS_ENABLED',True):return False
+    if not _env_bool('DOUGBOT_SPONTANEOUS_ENABLED',False):return False
     cooldown=_env_int('DOUGBOT_SPONTANEOUS_COOLDOWN_SECONDS',600,0)
     if time.time()-float(state.get('last_action',0) or 0)<cooldown:return False
     chance=_env_float('DOUGBOT_SPONTANEOUS_CHANCE',0.06,0.0,1.0)
@@ -290,7 +290,7 @@ def _spontaneous_due(state):
 def maybe_spontaneous(bot,posts,seen,own,own_did,state,draft_only=False):
     if not _spontaneous_due(state):return False
     post_chance=_env_float('DOUGBOT_SPONTANEOUS_POST_CHANCE',0.35,0.0,1.0)
-    mode='draft' if draft_only else os.getenv('DOUGBOT_SPONTANEOUS_MODE','auto').strip().lower()
+    mode='draft' if draft_only else os.getenv('DOUGBOT_SPONTANEOUS_MODE','approval').strip().lower()
     choose_root=random.random()<post_chance
 
     if not choose_root:
@@ -300,25 +300,28 @@ def maybe_spontaneous(bot,posts,seen,own,own_did,state,draft_only=False):
             ctx=thread_context(uri,own) if _parent_uri(target) else None
             ans=bot.reply(text,context=ctx)
             print(f'\nSPONTANEOUS RANDOM REPLY\nAuthor: {author}\nText: {text}\nURI: {uri}\n\nDRAFT:\n{ans}')
-            performed=reply(uri,ans,mode_override=mode)
-            # Mark the target even in draft mode so a dry run does not hammer the same post.
-            seen.add(uri);save_seen(seen)
+            performed=False if draft_only else reply(uri,ans,mode_override=mode)
+            # Remember this target in memory; persist only after a confirmed write.
+            seen.add(uri)
+            if performed:save_seen(seen)
             if performed or draft_only:
-                state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1;save_spontaneous_state(state)
+                state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1
+                if not draft_only:save_spontaneous_state(state)
             return performed or draft_only
         # No eligible random target? Fall through to a root post rather than doing nothing.
 
     ans=bot.reply(_standalone_prompt(),max_new_tokens=_env_int('DOUGBOT_SPONTANEOUS_POST_MAX_TOKENS',70,8))
     print(f'\nSPONTANEOUS STANDALONE POST\n\nDRAFT:\n{ans}')
-    performed=post(ans,mode_override=mode)
+    performed=False if draft_only else post(ans,mode_override=mode)
     if performed or draft_only:
-        state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1;save_spontaneous_state(state)
+        state['last_action']=time.time();state['actions']=int(state.get('actions',0))+1
+        if not draft_only:save_spontaneous_state(state)
     return performed or draft_only
 
 
 def watch(limit=40,max_drafts=0,draft_only=False):
-    bot=Dougbot();seen=load_seen();trigger=os.getenv('DOUGBOT_TRIGGER','@dougbot').lower();delay=_env_int('DOUGBOT_POLL_SECONDS',45,1)
-    own,own_did=own_identity(); actions=0; mode='draft' if draft_only else os.getenv('DOUGBOT_REPLY_MODE','auto').lower(); reply_threads=_env_bool('DOUGBOT_REPLY_TO_OWN_THREADS',True)
+    bot=Dougbot();seen=load_seen();delay=_env_int('DOUGBOT_POLL_SECONDS',45,1)
+    own,own_did=own_identity(); trigger=(os.getenv('DOUGBOT_TRIGGER') or '@'+own).lower(); actions=0; mode='draft' if draft_only else os.getenv('DOUGBOT_REPLY_MODE','approval').lower(); reply_threads=_env_bool('DOUGBOT_REPLY_TO_OWN_THREADS',True)
     spont=load_spontaneous_state();pool_limit=max(limit,_env_int('DOUGBOT_SPONTANEOUS_POOL_LIMIT',60,1))
     cap='unlimited' if max_drafts<=0 else str(max_drafts)
     print(f'watching Delve; trigger={trigger!r}; reply_mode={mode}; replies-to-Dougbot={"ON" if reply_threads else "OFF"}; poll={delay}s; action_cap={cap}; spontaneous={"ON" if _env_bool("DOUGBOT_SPONTANEOUS_ENABLED",True) else "OFF"}')
@@ -338,8 +341,10 @@ def watch(limit=40,max_drafts=0,draft_only=False):
             ctx=thread_context(uri,own) if replies_to_us else None
             ans=bot.reply(text,context=ctx)
             print('\nDRAFT:\n',ans)
-            if not draft_only:reply(uri,ans)
-            seen.add(uri);save_seen(seen);actions+=1;did_action=True
+            performed=False if draft_only else reply(uri,ans)
+            seen.add(uri)
+            if performed:save_seen(seen)
+            actions+=1;did_action=True
             if max_drafts>0 and actions>=max_drafts:
                 print('session action cap reached; exiting');return
             time.sleep(2)

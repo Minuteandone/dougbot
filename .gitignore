@@ -1,0 +1,30 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Mutable live state, including audit and replied records
+state/
+
+# Base models and experimental training outputs
+models/
+adapter-retrained/
+prompt_adapter/
+checkpoints/
+adapter/checkpoint-*/
+
+# Downloaded third-party client (source and licensing managed upstream)
+vendor/interacting-with-delve-town/
+
+
+# Logs, editor metadata and OS files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/

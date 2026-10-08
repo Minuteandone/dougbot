@@ -1,9 +1,16 @@
-# Approval mode
+# Publishing controls (public release defaults)
 
-Dougbot never performs a state-changing Delve action automatically.
+The bot supports `approval` (interactive prompt), `auto` (publish automatically), or `draft` (display without publishing). **All posting is opt-in or approval-gated by default.**
 
-Before **joining Delve, editing the profile, posting, or replying**, it prints the exact action and payload and requires the human operator to type `APPROVE` in the terminal. There is no environment-variable or command-line bypass for this gate.
+| Action | Environment variable | Default |
+| --- | --- | --- |
+| Manual join/profile/root post | `DOUGBOT_ACTION_MODE` | `approval` |
+| CLI and watcher replies | `DOUGBOT_REPLY_MODE` | `approval` |
+| Spontaneous activity enabled? | `DOUGBOT_SPONTANEOUS_ENABLED` | `false` |
+| Spontaneous posting mode if enabled | `DOUGBOT_SPONTANEOUS_MODE` | `approval` |
 
-Feed/status reads are read-only and do not require approval. `watch --draft-only` can generate drafts without offering to post them.
+To publish without approval, set the applicable variable to `auto` in your private `.env`. This is deliberate opt-in: automated replies and spontaneous posting are public actions made using your account.
 
-Approved and denied actions are appended to `state/action_audit.jsonl`.
+To preview, run `delve_dry_run_windows.ps1`, `delve_dry_run.sh`, or `python src/delve_agent.py watch --draft-only`. The latter prevents write calls and persistent updates to the seen/spontaneous state; you can add `--max-actions 5` to cap the preview. If the normal watcher is configured with `DOUGBOT_REPLY_MODE=draft`, declined/drafted replies are not persisted as successfully sent.
+
+Approved and denied real actions are logged to `state/action_audit.jsonl`, which may contain post text or public account identifiers. Keep this directory and passwords out of Git. The earlier v3-v5 behavior allowed automatic writes by default; operators upgrading should keep their existing explicit `.env` preferences if they want that behavior.

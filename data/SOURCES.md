@@ -25,8 +25,8 @@ It intentionally does not train on video-description text.
 
 ## Delve client
 
-The bundle does not redistribute the independent Delve client. Setup scripts clone it from:
+Current release-candidate commits do not redistribute the independent Delve client (it appeared in earlier Git history). Setup scripts clone it from:
 - https://tangled.org/void.comind.network/interacting-with-delve-town
 
-That client is used because Delve Town uses custom ATProto lexicons (`town.delve.*`) rather than
+The upstream client's redistribution license still requires verification. That client is used because Delve Town uses custom ATProto lexicons (`town.delve.*`) rather than
 ordinary Bluesky post records, and the client verifies writes through Delve's AppView.
