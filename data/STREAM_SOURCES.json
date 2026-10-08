@@ -1,0 +1,22 @@
+{
+  "ai_chat_vod": {
+    "title": "I trained an Ai on 380,000 Twitch Chat messages (VOD)",
+    "date": "2024-11-14",
+    "url": "https://www.youtube.com/watch?v=Q2wpD47uDTo",
+    "facts": [
+      "The stream centers on training and testing an AI from a large archive of Twitch Chat messages.",
+      "A major problem was cleaning/moderating noisy chat data before it could be useful for training.",
+      "The resulting AI is compared with live chat behavior and becomes a new object for Doug/chat banter."
+    ]
+  },
+  "painting_charity": {
+    "title": "Twitch Chat makes a painting for Charity (then Doug and Chat play Worms WMD)",
+    "date": "2024-06-24",
+    "url": "https://www.youtube.com/watch?v=6N3GoKZbzQM",
+    "facts": [
+      "Doug lets Twitch Chat collectively create an artwork intended for a charity auction.",
+      "Crowd-control and creative disagreement become the central challenge.",
+      "The art segment expands so much that the originally planned later activity is dropped."
+    ]
+  }
+}
