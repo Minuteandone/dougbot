@@ -1,0 +1,14 @@
+{
+  "step": 181,
+  "total": 181,
+  "seed": 5605,
+  "max_length": 192,
+  "lr": 7e-05,
+  "curriculum": "one shuffled pass",
+  "base": "Qwen2.5-0.5B-Instruct local",
+  "source": "whole-VOD safe high-confidence paraphrased conversations + Delve transfer",
+  "rank": 16,
+  "alpha": 32,
+  "layers": "12-23",
+  "dataset_rows": 181
+}

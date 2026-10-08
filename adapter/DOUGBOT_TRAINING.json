@@ -1,0 +1,17 @@
+{
+  "method": "assistant-only SFT LoRA",
+  "soft_prompt": false,
+  "routing": false,
+  "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "trainable_parameters": 1466368,
+  "total_parameters_with_adapter": 495499136,
+  "lora_rank": 8,
+  "lora_alpha": 16,
+  "lora_dropout": 0.03,
+  "target_layers": [16,17,18,19,20,21,22,23],
+  "target_modules": ["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"],
+  "optimizer_steps": 80,
+  "training_pool_deduped_conversations": 3012,
+  "system_during_training": "You are Dougbot.",
+  "notes": "Personality is learned in LoRA weights. Runtime does not use few-shot style examples. Stream-derived rows are original synthetic dialogues based on public stream situations, not transcripts."
+}
