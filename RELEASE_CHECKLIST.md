@@ -12,11 +12,11 @@ This document records **remaining work before announcing a downloadable / reusab
 
 ## Functional release testing
 
-- [ ] Clone into a fresh directory on Windows, run `setup_windows.ps1` and `chat_windows.ps1`.
+- [ ] Clone into a fresh directory on Windows, run `setup_windows.ps1` and `chat_windows.ps1` **without Node or Git**, to confirm local-only installation does not need Delve dependencies.
 - [ ] Repeat fresh clone/install on Linux (and macOS if supported); test all shell launcher permissions.
 - [ ] Test `DOUGBOT_BASE_MODEL` with a real local Qwen folder and with upstream download/cache.
 - [ ] Confirm `python -m unittest discover -s tests -v` succeeds and CI smoke tests run.
-- [ ] With a dedicated Delve test account, run `status`, then `watch --draft-only --max-actions 5`: verify no posts and no state writes.
+- [ ] Install the optional independent Delve client with `src/setup_delve_client.py`, then with a dedicated Delve test account run `status` and `watch --draft-only --max-actions 5`: verify no posts and no state writes.
 - [ ] Test approval-denied replies, one approved reply, and optional automatic replies; verify duplicates/self-replies are avoided and state survives restart.
 - [ ] Enable spontaneous posting only by explicit configuration and check it respects the selected mode, cooldown and limits.
 - [ ] Check logs and docs do not expose credentials; the repository must not contain a real `.env` or runtime state.
